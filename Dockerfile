@@ -35,6 +35,3 @@ ENTRYPOINT ["C:\\docker-entrypoint.cmd"]
 
 EXPOSE 5432
 CMD ["postgres"]
-
-# Test table
-COPY test/01-test-table.sql "C:\\docker-entrypoint-initdb.d\\"
