@@ -3,36 +3,44 @@
 ###
 FROM microsoft/windowsservercore:1803
 
-# Use PowerShell for the installation
+##### Use PowerShell for the installation
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-# Required for BigSQL
+### Required for BigSQL
 ENV PYTHONIOENCODING="UTF-8" \
-    PSQL_VER="pg10" \
-    PGC_VER="3.3.7" \
-    PGC_REPO="https://s3.amazonaws.com/pgcentral" \
-    PGC_CMD="C:\\bigsql\\pgc"
+    PYTHONPATH="C:\\bigsql\\pg10\\python\\site-packages" \
+    GDAL_DATA="C:\\bigsql\\pg10\\share\\gdal"
+
+RUN New-Item -ItemType Directory -Path "C:\\docker-entrypoint-initdb.d"
 
 ### Download PostgreSQL
 ### https://www.postgresql.org/download/windows/
 ### https://www.openscg.com/bigsql/package-manager.jsp/
 RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 ; \
-    Invoke-WebRequest $('{0}/bigsql-pgc-{1}.zip' -f $Env:PGC_REPO,$Env:PGC_VER) -OutFile 'C:\\bigsql.zip' ; \
+    Invoke-WebRequest 'https://s3.amazonaws.com/pgcentral/bigsql-pgc-3.3.7.zip' -OutFile 'C:\\bigsql.zip' ; \
     Expand-Archive 'C:\\bigsql.zip' -DestinationPath 'C:\\' ; \
     Remove-Item -Path 'C:\\bigsql.zip'
 
 ### Install PostgreSQL
-RUN Invoke-Expression -Command $('{0} set GLOBAL REPO {1}' -f $Env:PGC_CMD,$Env:PGC_REPO) ; \
-    Invoke-Expression -Command $('{0} update --silent' -f $Env:PGC_CMD) ; \
-    Invoke-Expression -Command $('{0} install --silent {1}' -f $Env:PGC_CMD,$Env:PSQL_VER)
+RUN Invoke-Expression -Command 'C:\\bigsql\\pgc set GLOBAL REPO https://s3.amazonaws.com/pgcentral' ; \
+    Invoke-Expression -Command 'C:\\bigsql\\pgc update --silent' ; \
+    Invoke-Expression -Command 'C:\\bigsql\\pgc install --silent pg10'
 
-# Switch back to the default shell
+##### Switch back to the default shell
 SHELL ["cmd", "/S", "/C"]
 
-# In order to set system PATH, ContainerAdministrator must be used
+#### In order to set system PATH, ContainerAdministrator must be used
 USER ContainerAdministrator
-RUN setx /M PATH "C:\\bigsql\\%PSQL_VER%\\bin;%PATH%"
+RUN setx /M PATH "C:\\bigsql\\pg10\\bin;%PATH%"
 USER ContainerUser
+ENV PGHOME="C:\\bigsql\\pg10" \
+    PGDATA="C:\\bigsql\\data\\pg10" \
+    PGLOGS="C:\\bigsql\\logs\\pg10" \
+    PGPORT=5432
+
+# Create required directories
+RUN mkdir %PGDATA% \
+    mkdir %APPDATA%\postgresql
 
 COPY docker-entrypoint.cmd "C:\\"
 ENTRYPOINT ["C:\\docker-entrypoint.cmd"]
