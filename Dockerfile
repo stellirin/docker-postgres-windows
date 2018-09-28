@@ -1,7 +1,7 @@
 ###
-### PostgreSQL on Windows
+### Pretty Good Command Line Interface
 ###
-FROM microsoft/windowsservercore:1803 as install
+FROM microsoft/windowsservercore:1803 as prepare
 
 # Set the variables for BigSQL
 ENV PGC_REPO=https://s3.amazonaws.com/pgcentral \
@@ -23,7 +23,13 @@ RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tl
 
 ### Update BigSQL
 RUN Invoke-Expression -Command $('C:\\bigsql\\pgc set GLOBAL REPO {0}' -f$env:PGC_REPO) ; \
-    Invoke-Expression -Command   'C:\\bigsql\\pgc update --silent'
+    Invoke-Expression -Command   'C:\\bigsql\\pgc update --silent' ; \
+    Remove-Item -Path 'C:\\bigsql\\conf\\pgc.pid'
+
+###
+### Download PostgreSQL
+###
+FROM prepare as download
 
 ### Set the PostgreSQL version we will install
 ### This is set here to allow us to reuse the abover layers
@@ -31,7 +37,9 @@ ARG PGC_DB
 ENV PGC_DB=${PGC_DB}
 
 ### Install PostgreSQL
-RUN Invoke-Expression -Command $('C:\\bigsql\\pgc install --silent {0}' -f $env:PGC_DB)
+RUN Invoke-Expression -Command $('C:\\bigsql\\pgc install --silent {0}' -f $env:PGC_DB) ; \
+    Invoke-Expression -Command   'C:\\bigsql\\pgc clean' ; \
+    Remove-Item -Path 'C:\\bigsql\\conf\\pgc.pid'
 
 #### make the sample config easier to munge (and "correct by default")
 COPY docker-postgresql.conf.ps1 "C:\\bigsql\\hub\\scripts\\"
@@ -42,15 +50,21 @@ RUN  Invoke-Expression -Command 'C:\\bigsql\\hub\\scripts\\docker-postgresql.con
 ###
 FROM microsoft/nanoserver:1803
 
-### Required for BigSQL
+#### Copy over the PGCLI
+COPY --from=prepare "C:\\bigsql" "C:\\bigsql"
+
+### Set the PostgreSQL version we will install
+### This is set here to allow us to reuse the abover layers
 ARG PGC_DB
-ENV PGC_DB=${PGC_DB} \
-    PYTHONIOENCODING="UTF-8" \
+ENV PGC_DB=${PGC_DB}
+
+### Required for BigSQL
+ENV PYTHONIOENCODING="UTF-8" \
     PYTHONPATH="C:\\bigsql\\${PGC_DB}\\python\\site-packages" \
     GDAL_DATA="C:\\bigsql\\${PGC_DB}\\share\\gdal"
 
-#### Copy over the prepared BigSQL installation
-COPY --from=install "C:\\bigsql" "C:\\bigsql"
+#### Copy over the PostgeSQL installation
+COPY --from=download "C:\\bigsql\\${PGC_DB}" "C:\\bigsql\\${PGC_DB}"
 
 #### In order to set system PATH, ContainerAdministrator must be used
 USER ContainerAdministrator
@@ -64,11 +78,11 @@ ENV PGHOME="C:\\bigsql\\${PGC_DB}" \
     PGPORT="5432"
 
 ### Create required directories
-RUN mkdir "%PGDATA%" \
-    mkdir "%PGLOGS%" \
-    mkdir "%APPDATA%\\postgresql" \
-    mkdir "C:\\docker-entrypoint-initdb.d" \
-    mkdir "C:\\docker-certificates.d"
+RUN md "%PGDATA%" \
+       "%PGLOGS%" \
+       "%APPDATA%\\postgresql" \
+       "C:\\docker-entrypoint-initdb.d" \
+       "C:\\docker-certificates.d"
 
 COPY docker-entrypoint.cmd "C:\\"
 ENTRYPOINT ["C:\\docker-entrypoint.cmd"]
