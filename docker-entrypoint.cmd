@@ -45,23 +45,26 @@ EXIT /B 0
 
 :start
 
-:: Ensure the directories exist with correct permissions
+:: Ensure the directories exist
 if NOT exist %PGDATA% (
     mkdir %PGDATA%
 )
-call icacls "%PGDATA%" /grant "%USERNAME%":(OI)(CI)F > NUL
 if NOT exist %PGLOGS% (
     mkdir %PGLOGS%
 )
+
+:: Ensure the directories have correct permissions
+call icacls "%PGDATA%" /grant "%USERNAME%":(OI)(CI)F > NUL
 call icacls "%PGLOGS%" /grant "%USERNAME%":(OI)(CI)F > NUL
 
 :: look specifically for PG_VERSION, as it is expected in the DB dir
-if NOT exist "%PGC_DATA%\PG_VERSION" (
+if NOT exist "%PGDATA%\PG_VERSION" (
 
     CALL :file_env POSTGRES_USER, postgres
     CALL :file_env POSTGRES_PASSWORD
 
-    :: TODO: find out why setting POSTGRES_PASSWORD as env works on Linux
+    :: TODO: Find why setting POSTGRES_PASSWORD as env works on Linux without a file
+    :: TODO: On Windows we have to write the password to a temp file
     echo %POSTGRES_PASSWORD%> "%PGHOME%\.pgpass"
 
     CALL :file_env POSTGRES_INITDB_ARGS
@@ -70,7 +73,9 @@ if NOT exist "%PGC_DATA%\PG_VERSION" (
     )
     call initdb -U "%POSTGRES_USER%" -A md5 -E UTF8 --no-locale -D "%PGDATA%" --pwfile="%PGHOME%\.pgpass" %$POSTGRES_INITDB_ARGS% > "%PGLOGS%\install.log" 2>&1
 
-    :: Set a valid password file and delete the temporary password file
+    :: TODO: Find why we can't use the "authMethod=trust" like on Linux
+    :: TODO: Probably related to the above TODO
+    :: Set the password file and delete the temporary password file
     echo localhost:%PGPORT%:*:%POSTGRES_USER%:%POSTGRES_PASSWORD%> %APPDATA%\postgresql\pgpass.conf
     echo 127.0.0.1:%PGPORT%:*:%POSTGRES_USER%:%POSTGRES_PASSWORD%>> %APPDATA%\postgresql\pgpass.conf
     copy %PGHOME%\init\pg_hba.conf %PGDATA%\pg_hba.conf > NUL
@@ -85,18 +90,19 @@ if NOT exist "%PGC_DATA%\PG_VERSION" (
     :: does not listen on external TCP/IP and waits until start finishes
 	call pg_ctl -D "%PGDATA%" -w start
 
-    set psqlOpt=^-v ON_ERROR_STOP=1
+    set psqlParam=^-v ON_ERROR_STOP=1
 
+    :: Create a database with its name as the user name, override %PGDATABASE%
     if NOT [%POSTGRES_USER%] == [postgres] (
-        echo CREATE DATABASE :"db"; | call psql %psqlOpt% --dbname postgres --set db="%POSTGRES_USER%"
+        echo CREATE DATABASE :"db"; | call psql %psqlParam% --dbname postgres --set db="%POSTGRES_USER%"
         set PGDATABASE=%POSTGRES_USER%
     )
-    set psqlOpt=^-v ON_ERROR_STOP=1 --dbname "%PGDATABASE%"
+    set psqlParam=^-v ON_ERROR_STOP=1 --dbname "%PGDATABASE%"
 
     :: Execute any SQL scripts for this new DB
     for %%f in (C:\docker-entrypoint-initdb.d\*.sql) do (
         echo psql: running %%f
-        call psql %psqlOpt% -f "%%f"
+        call psql %psqlParam% -f "%%f"
     )
 
     pg_ctl -D "%PGDATA%" -m fast -w stop

@@ -1,44 +1,52 @@
 ###
-### PostgreSQL in Windows
+### PostgreSQL on Windows
 ###
 FROM microsoft/windowsservercore:1803
+
+# Set the variables for BigSQL
+ENV PGC_REPO=https://s3.amazonaws.com/pgcentral \
+    PGC_VER=3.3.7 \
+    PGC_DB=pg10
 
 ##### Use PowerShell for the installation
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 ### Required for BigSQL
 ENV PYTHONIOENCODING="UTF-8" \
-    PYTHONPATH="C:\\bigsql\\pg10\\python\\site-packages" \
-    GDAL_DATA="C:\\bigsql\\pg10\\share\\gdal"
+    PYTHONPATH="C:\\bigsql\\${PGC_DB}\\python\\site-packages" \
+    GDAL_DATA="C:\\bigsql\\${PGC_DB}\\share\\gdal"
 
-RUN New-Item -ItemType Directory -Path "C:\\docker-entrypoint-initdb.d"
+RUN New-Item -ItemType Directory -Path "C:\\docker-entrypoint-initdb.d" ; \
+    New-Item -ItemType Directory -Path "C:\\docker-certificates.d"
 
 ### Download PostgreSQL
 ### https://www.postgresql.org/download/windows/
 ### https://www.openscg.com/bigsql/package-manager.jsp/
 RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 ; \
-    Invoke-WebRequest 'https://s3.amazonaws.com/pgcentral/bigsql-pgc-3.3.7.zip' -OutFile 'C:\\bigsql.zip' ; \
+    Invoke-WebRequest $('{0}/bigsql-pgc-{1}.zip' -f $env:PGC_REPO,$env:PGC_VER) -OutFile 'C:\\bigsql.zip' ; \
     Expand-Archive 'C:\\bigsql.zip' -DestinationPath 'C:\\' ; \
     Remove-Item -Path 'C:\\bigsql.zip'
 
 ### Install PostgreSQL
-RUN Invoke-Expression -Command 'C:\\bigsql\\pgc set GLOBAL REPO https://s3.amazonaws.com/pgcentral' ; \
-    Invoke-Expression -Command 'C:\\bigsql\\pgc update --silent' ; \
-    Invoke-Expression -Command 'C:\\bigsql\\pgc install --silent pg10'
+RUN Invoke-Expression -Command $('C:\\bigsql\\pgc set GLOBAL REPO {0}' -f$ebv:PGC_REPO) ; \
+    Invoke-Expression -Command   'C:\\bigsql\\pgc update --silent' ; \
+    Invoke-Expression -Command $('C:\\bigsql\\pgc install --silent {0}' -f $env:PGC_DB)
 
 ##### Switch back to the default shell
 SHELL ["cmd", "/S", "/C"]
 
 #### In order to set system PATH, ContainerAdministrator must be used
 USER ContainerAdministrator
-RUN setx /M PATH "C:\\bigsql\\pg10\\bin;%PATH%"
+RUN setx /M PATH "C:\\bigsql\\%PGC_DB%\\bin;%PATH%"
 USER ContainerUser
-ENV PGHOME="C:\\bigsql\\pg10" \
-    PGDATA="C:\\bigsql\\data\\pg10" \
-    PGLOGS="C:\\bigsql\\logs\\pg10" \
+
+### Set regular variables for PSQL
+ENV PGHOME="C:\\bigsql\\${PGC_DB}" \
+    PGDATA="C:\\bigsql\\data\\${PGC_DB}" \
+    PGLOGS="C:\\bigsql\\logs\\${PGC_DB}" \
     PGPORT=5432
 
-# Create required directories
+### Create required directories
 RUN mkdir %PGDATA% \
     mkdir %APPDATA%\postgresql
 

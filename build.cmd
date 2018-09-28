@@ -1,3 +1,3 @@
 docker build ^
-    --tag stellirin/postgres-windows ^
+    --tag stellirin/postgres-windows:10 ^
     .
