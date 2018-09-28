@@ -14,6 +14,12 @@ The Linux based Docker iamge cannot run on Windows as a LCOW container. This is 
 
 (An attempt was made to remove `chown` from the Linux based image, but PostgreSQL strongly resists being installed and run as the `root` user.)
 
+## Entrypoint
+
+The entrypoint is written as a batch script in the hope that we can eventually run this on `windows/nanoserver`. Currently this fails so the full `microsoft/windowsservercore` is used.
+
+If we can achieve this the base image drops from `4.88GB` to only `357MB`.
+
 ## Licence
 
 The files here are under a liberal licence. The licence here covers *only* the files in this repository. It doesn't cover the PostgreSQL distribution, which has its own licence. The licence is subject to change without notice.
