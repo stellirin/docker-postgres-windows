@@ -32,6 +32,10 @@ RUN Invoke-Expression -Command $('C:\\bigsql\\pgc set GLOBAL REPO {0}' -f$ebv:PG
     Invoke-Expression -Command   'C:\\bigsql\\pgc update --silent' ; \
     Invoke-Expression -Command $('C:\\bigsql\\pgc install --silent {0}' -f $env:PGC_DB)
 
+#### make the sample config easier to munge (and "correct by default")
+COPY docker-postgresql.conf.ps1 "C:\\bigsql\\hub\\scripts\\"
+RUN  Invoke-Expression -Command 'C:\\bigsql\\hub\\scripts\\docker-postgresql.conf.ps1'
+
 ##### Switch back to the default shell
 SHELL ["cmd", "/S", "/C"]
 
