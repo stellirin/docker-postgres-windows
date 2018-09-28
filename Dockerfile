@@ -1,7 +1,7 @@
 ###
 ### PostgreSQL on Windows
 ###
-FROM microsoft/windowsservercore:1803
+FROM microsoft/windowsservercore:1803 as install
 
 # Set the variables for BigSQL
 ENV PGC_REPO=https://s3.amazonaws.com/pgcentral \
@@ -36,8 +36,19 @@ RUN Invoke-Expression -Command $('C:\\bigsql\\pgc set GLOBAL REPO {0}' -f$ebv:PG
 COPY docker-postgresql.conf.ps1 "C:\\bigsql\\hub\\scripts\\"
 RUN  Invoke-Expression -Command 'C:\\bigsql\\hub\\scripts\\docker-postgresql.conf.ps1'
 
-##### Switch back to the default shell
-SHELL ["cmd", "/S", "/C"]
+###
+### PostgreSQL on Windows Nano Server
+###
+FROM microsoft/nanoserver:1803
+
+### Required for BigSQL
+ENV PGC_DB=pg10 \
+    PYTHONIOENCODING="UTF-8" \
+    PYTHONPATH="C:\\bigsql\\${PGC_DB}\\python\\site-packages" \
+    GDAL_DATA="C:\\bigsql\\${PGC_DB}\\share\\gdal"
+
+#### Copy over the prepared BigSQL installation
+COPY --from=install "C:\\bigsql" "C:\\bigsql"
 
 #### In order to set system PATH, ContainerAdministrator must be used
 USER ContainerAdministrator
@@ -48,7 +59,7 @@ USER ContainerUser
 ENV PGHOME="C:\\bigsql\\${PGC_DB}" \
     PGDATA="C:\\bigsql\\data\\${PGC_DB}" \
     PGLOGS="C:\\bigsql\\logs\\${PGC_DB}" \
-    PGPORT=5432
+    PGPORT="5432"
 
 ### Create required directories
 RUN mkdir %PGDATA% \

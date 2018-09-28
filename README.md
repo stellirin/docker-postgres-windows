@@ -1,6 +1,6 @@
 # PostgreSQL as a Windows container
 
-A Windows container to run PostgreSQL based on the [BigSQL](http://www.openscg.com/bigsql/about/) distribution.
+A Windows container to run PostgreSQL based on the [BigSQL](http://www.openscg.com/bigsql/about/) distribution, which is one of the two official distributions found on the [PostgeSQL for Windows](https://www.postgresql.org/download/windows/) download page.
 
 ## Intent
 
@@ -16,9 +16,7 @@ The Linux based Docker iamge cannot run on Windows as a LCOW container. This is 
 
 ## Entrypoint
 
-The entrypoint is written as a batch script in the hope that we can eventually run this on `windows/nanoserver`. Currently this fails so the full `microsoft/windowsservercore` is used.
-
-If we can achieve this the base image drops from `4.88GB` to only `357MB`.
+The entrypoint is written as a batch script because we run this on `windows/nanoserver`, which doesn't have PowerShell. While writing the entrypoint script was challenging due to batch scripts limitations, this gives us a base image of less than `650MB` versus `5.25GB` when `microsoft/windowsservercore` is used.
 
 ## Licence
 
