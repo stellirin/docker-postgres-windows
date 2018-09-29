@@ -1,6 +1,7 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
-:: Build all version of PostgreSQL supported by BigSQL
+
+:: Build versions of PostgreSQL supported by BigSQL
 
 set value=%~1
 if [%value%] == [] (
@@ -27,9 +28,13 @@ if [%pg11%] == [true] (
 if [%pg10%] == [true] (
     docker build ^
         --build-arg PGC_DB=pg10 ^
+        --tag stellirin/postgres-windows:10.5 ^
         --tag stellirin/postgres-windows:10 ^
+        --tag stellirin/postgres-windows:latest ^
         .
+    docker push stellirin/postgres-windows:10.5
     docker push stellirin/postgres-windows:10
+    docker push stellirin/postgres-windows:latest
 )
 
 :: PostgeSQL 9.6
@@ -37,8 +42,10 @@ if [%pg96%] == [true] (
     docker build ^
         --build-arg PGC_DB=pg96 ^
         --tag stellirin/postgres-windows:9.6 ^
+        --tag stellirin/postgres-windows:9 ^
         .
     docker push stellirin/postgres-windows:9.6
+    docker push stellirin/postgres-windows:9
 )
 
 :: PostgeSQL 9.5
