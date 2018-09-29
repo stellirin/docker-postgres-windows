@@ -1,4 +1,5 @@
 @echo off
+SETLOCAL EnableDelayedExpansion
 
 :: Batch file has no concept of a function, only goto
 goto :start
@@ -8,7 +9,12 @@ goto :start
 ::       (will allow for "%XYZ_DB_PASSWORD_FILE%" to fill in the value of
 ::       "%XYZ_DB_PASSWORD%" from a file, especially for Docker's secrets feature)
 :file_env
-SETLOCAL EnableDelayedExpansion
+:: Reset all values
+set cmdVar=
+set fileVar=
+set default=
+set value=
+:: Start the 'function'
 set cmdVar=%~1
 set fileVar=%cmdVar%_FILE
 set default=%~2
@@ -34,9 +40,7 @@ if [!%cmdVar%!] == [] (
         set /p value=<!%fileVar%!
     )
 )
-ENDLOCAL & (
-    set %cmdVar%=%value%
-)
+set %cmdVar%=%value%
 EXIT /B 0
 
 :: ------------------------------------------------------------
@@ -60,60 +64,68 @@ call icacls "%PGLOGS%" /grant "%USERNAME%":(OI)(CI)F > NUL
 :: look specifically for PG_VERSION, as it is expected in the DB dir
 if NOT exist "%PGDATA%\PG_VERSION" (
 
-    CALL :file_env POSTGRES_USER, postgres
-    CALL :file_env POSTGRES_PASSWORD
+    call :file_env POSTGRES_USER, postgres
+    call :file_env POSTGRES_PASSWORD
+    call :file_env POSTGRES_INITDB_ARGS
 
-    :: TODO: Find why setting POSTGRES_PASSWORD as env works on Linux without a file
-    :: TODO: On Windows we have to write the password to a temp file
-    echo %POSTGRES_PASSWORD%> "%PGHOME%\.pgpass"
-
-    CALL :file_env POSTGRES_INITDB_ARGS
-    if NOT [%POSTGRES_INITDB_WALDIR%] == [] (
-        set POSTGRES_INITDB_ARGS=%POSTGRES_INITDB_ARGS% --waldir %POSTGRES_INITDB_WALDIR%
+    if NOT [!POSTGRES_PASSWORD!] == [] (
+        echo !POSTGRES_PASSWORD!> "%PGHOME%\.pgpass"
+        set POSTGRES_INITDB_ARGS=!POSTGRES_INITDB_ARGS! --pwfile="%PGHOME%\.pgpass"
     )
-    call initdb -U "%POSTGRES_USER%" -A md5 -E UTF8 --no-locale -D "%PGDATA%" --pwfile="%PGHOME%\.pgpass" %$POSTGRES_INITDB_ARGS% > "%PGLOGS%\install.log" 2>&1
 
-    :: TODO: Find why we can't use the "authMethod=trust" like on Linux
-    :: TODO: Probably related to the above TODO
-    :: Set the password file and delete the temporary password file
-    echo localhost:%PGPORT%:*:%POSTGRES_USER%:%POSTGRES_PASSWORD%> %APPDATA%\postgresql\pgpass.conf
-    echo 127.0.0.1:%PGPORT%:*:%POSTGRES_USER%:%POSTGRES_PASSWORD%>> %APPDATA%\postgresql\pgpass.conf
-    copy %PGHOME%\init\pg_hba.conf %PGDATA%\pg_hba.conf > NUL
-    call del "%PGHOME%\.pgpass"
+    if NOT [%POSTGRES_INITDB_WALDIR%] == [] (
+        set POSTGRES_INITDB_ARGS=!POSTGRES_INITDB_ARGS! --waldir %POSTGRES_INITDB_WALDIR%
+    )
 
-    :: Set the initial connection environment
-    set PGUSER=%POSTGRES_USER%
-    set PGDATABASE=postgres
-    set PGPASSFILE=%APPDATA%\postgresql\pgpass.conf
+    call initdb -U "!POSTGRES_USER!" -E UTF8 --no-locale -D "%PGDATA%" !POSTGRES_INITDB_ARGS!
+    if exist "%PGHOME%\.pgpass" (
+        call del "%PGHOME%\.pgpass"
+    )
+
+    if NOT [!POSTGRES_PASSWORD!] == [] (
+        set authMethod=md5
+        echo authMethod: !authMethod!
+    ) else (
+        echo ****************************************************
+        echo WARNING: No password has been set for the database.
+        echo          This will allow anyone with access to the
+        echo          Postgres port to access your database. In
+        echo          Docker's default configuration, this is
+        echo          effectively any other container on the same
+        echo          system.
+        echo          Use "-e POSTGRES_PASSWORD=password" to set
+        echo          it in "docker run".
+        echo ****************************************************
+        set authMethod=trust
+        echo authMethod: !authMethod!
+    )
+    echo.>> "%PGDATA%\pg_hba.conf"
+    echo host all all all !authMethod!>> "%PGDATA%\pg_hba.conf"
 
     :: internal start of server in order to allow set-up using psql-client
     :: does not listen on external TCP/IP and waits until start finishes
-	call pg_ctl -D "%PGDATA%" -w start
+	call pg_ctl -U "!POSTGRES_USER!" -D "%PGDATA%" -w start
 
-    set psqlParam=^-v ON_ERROR_STOP=1
+    call :file_env POSTGRES_DB !POSTGRES_USER!
+
+    set psqlParam=^-v ON_ERROR_STOP=1 --username "!POSTGRES_USER!" --no-password
 
     :: Create a database with its name as the user name, override %PGDATABASE%
-    if NOT [%POSTGRES_USER%] == [postgres] (
-        echo CREATE DATABASE :"db"; | call psql %psqlParam% --dbname postgres --set db="%POSTGRES_USER%"
-        set PGDATABASE=%POSTGRES_USER%
+    if NOT [!POSTGRES_DB!] == [postgres] (
+        echo CREATE DATABASE :"db"; | call psql !psqlParam! --dbname postgres --set db="!POSTGRES_DB!"
     )
-    set psqlParam=^-v ON_ERROR_STOP=1 --dbname "%PGDATABASE%"
+    set psqlParam=^-v ON_ERROR_STOP=1 --username "!POSTGRES_USER!" --no-password --dbname "!POSTGRES_DB!"
 
     :: Execute any SQL scripts for this new DB
     for %%f in (C:\docker-entrypoint-initdb.d\*.sql) do (
         echo psql: running %%f
-        call psql %psqlParam% -f "%%f"
+        call psql !psqlParam! -f "%%f"
     )
 
-    pg_ctl -D "%PGDATA%" -m fast -w stop
+    pg_ctl -U "!POSTGRES_USER!" -D "%PGDATA%" -m fast -w stop
 
     echo PostgreSQL init process complete; ready for start up.
 )
-
-:: Set the connection environment
-set PGUSER=%POSTGRES_USER%
-set PGDATABASE=%POSTGRES_USER%
-set PGPASSFILE=%APPDATA%\postgresql\pgpass.conf
 
 :: start the database
 call %*
