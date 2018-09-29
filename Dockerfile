@@ -41,9 +41,11 @@ RUN Invoke-Expression -Command $('C:\\bigsql\\pgc install --silent {0}' -f $env:
     Invoke-Expression -Command   'C:\\bigsql\\pgc clean' ; \
     Remove-Item -Path 'C:\\bigsql\\conf\\pgc.pid'
 
-#### make the sample config easier to munge (and "correct by default")
-COPY docker-postgresql.conf.ps1 "C:\\bigsql\\hub\\scripts\\"
-RUN  Invoke-Expression -Command 'C:\\bigsql\\hub\\scripts\\docker-postgresql.conf.ps1'
+### make the sample config easier to munge (and "correct by default")
+RUN $SAMPLE_FILE = $('C:\\bigsql\\{0}\\share\\postgresql\\postgresql.conf.sample' -f $env:PGC_DB) ; \
+    $SAMPLE_CONF = Get-Content $SAMPLE_FILE ; \
+    $SAMPLE_CONF = $SAMPLE_CONF -Replace '#listen_addresses = ''localhost''','listen_addresses = ''*''' ; \
+    $SAMPLE_CONF | Set-Content $SAMPLE_FILE
 
 ###
 ### PostgreSQL on Windows Nano Server
