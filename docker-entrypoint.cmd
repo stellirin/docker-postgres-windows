@@ -112,6 +112,11 @@ if NOT exist "%PGDATA%\PG_VERSION" (
     )
     set psqlParam=^-v ON_ERROR_STOP=1 --username "!POSTGRES_USER!" --no-password --dbname "!POSTGRES_DB!"
 
+    :: Execute any batch scripts for this new DB
+    for %%f in (C:\docker-entrypoint-initdb.d\*.cmd) do (
+        echo cmd: running %%f
+        call "%%f"
+    )
     :: Execute any SQL scripts for this new DB
     for %%f in (C:\docker-entrypoint-initdb.d\*.sql) do (
         echo psql: running %%f
