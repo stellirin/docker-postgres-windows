@@ -49,17 +49,13 @@ EXIT /B 0
 
 :start
 
-:: Ensure the directories exist
+:: Ensure the data directory exists
 if NOT exist %PGDATA% (
     mkdir %PGDATA%
-)
-if NOT exist %PGLOGS% (
-    mkdir %PGLOGS%
 )
 
 :: Ensure the directories have correct permissions
 call icacls "%PGDATA%" /grant "%USERNAME%":(OI)(CI)F > NUL
-call icacls "%PGLOGS%" /grant "%USERNAME%":(OI)(CI)F > NUL
 
 :: look specifically for PG_VERSION, as it is expected in the DB dir
 if NOT exist "%PGDATA%\PG_VERSION" (
@@ -69,8 +65,8 @@ if NOT exist "%PGDATA%\PG_VERSION" (
     call :file_env POSTGRES_INITDB_ARGS
 
     if NOT [!POSTGRES_PASSWORD!] == [] (
-        echo !POSTGRES_PASSWORD!> "%PGHOME%\.pgpass"
-        set POSTGRES_INITDB_ARGS=!POSTGRES_INITDB_ARGS! --pwfile="%PGHOME%\.pgpass"
+        echo !POSTGRES_PASSWORD!> "C:\.pgpass"
+        set POSTGRES_INITDB_ARGS=!POSTGRES_INITDB_ARGS! --pwfile="C:\.pgpass"
     )
 
     if NOT [%POSTGRES_INITDB_WALDIR%] == [] (
@@ -78,8 +74,8 @@ if NOT exist "%PGDATA%\PG_VERSION" (
     )
 
     call initdb -U "!POSTGRES_USER!" -E UTF8 --no-locale -D "%PGDATA%" !POSTGRES_INITDB_ARGS!
-    if exist "%PGHOME%\.pgpass" (
-        call del "%PGHOME%\.pgpass"
+    if exist "C:\.pgpass" (
+        call del "C:\.pgpass"
     )
 
     if NOT [!POSTGRES_PASSWORD!] == [] (
