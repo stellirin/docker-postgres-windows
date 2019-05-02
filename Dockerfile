@@ -1,104 +1,78 @@
 ####
-#### Pretty Good Command Line Interface (PGCLI)
+#### Download and prepare PostgreSQL for Windows
 ####
-FROM microsoft/windowsservercore:1803 as prepare
+FROM mcr.microsoft.com/windows/servercore:1809 as prepare
 
-# Set the variables for PGCLI
-ENV PGC_VER 3.3.7
-ENV PGC_REPO https://s3.amazonaws.com/pgcentral
+# Set the variables for EnterpriseDB
+ARG EDB_VER
+ENV EDB_VER $EDB_VER
+ENV EDB_REPO https://get.enterprisedb.com/postgresql
 
 ##### Use PowerShell for the installation
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-### Required for PGCLI
-ENV PYTHONIOENCODING UTF-8
-
-### Download PGCLI
-### The loop is because the S3 connection is quite unreliable
-RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 ; \
-    Import-Module BitsTransfer ; \
-    Start-BitsTransfer \
-        -Source $('{0}/bigsql-pgc-{1}.zip' -f $env:PGC_REPO,$env:PGC_VER) \
-        -Destination 'C:\\BigSQL.zip' \
-        -DisplayName 'BigSQL' \
-        -Asynchronous ; \
-    $Job = Get-BitsTransfer 'BigSQL' ; \
-    $LastStatus = $Job.JobState ; \
-    Do { \
-        If ($LastStatus -ne $Job.JobState) { \
-            $LastStatus = $Job.JobState ; \
-            $Job \
-        } \
-    } \
-    While ($LastStatus -ne 'Transferring') ; \
-    $Job ; \
-    Do { \
-        Write-Host (Get-Date -Format s) $Job.BytesTransferred $Job.BytesTotal ($Job.BytesTransferred/$job.BytesTotal*100) ; \
-        Start-Sleep -s 10 \
-    } \
-    While ($Job.BytesTransferred -lt $Job.BytesTotal) ; \
-    Write-Host (Get-Date -Format s) $Job.BytesTransferred $Job.BytesTotal ($Job.BytesTransferred/$Job.BytesTotal*100) ; \
-    Complete-BitsTransfer $Job ; \
-    Expand-Archive 'C:\\BigSQL.zip' -DestinationPath 'C:\\' ; \
-    Remove-Item -Path 'C:\\BigSQL.zip'
-
-### Update PGCLI
-RUN Invoke-Expression -Command $('C:\\bigsql\\pgc set GLOBAL REPO {0}' -f$env:PGC_REPO) ; \
-    Invoke-Expression -Command   'C:\\bigsql\\pgc update --silent' ; \
-    Remove-Item -Path 'C:\\bigsql\\conf\\pgc.pid'
-
-####
-#### Download PostgreSQL
-####
-FROM prepare as download
-
-### Set the PostgreSQL version we will install
-### This is set here to allow us to reuse the abover layers
-ARG PGC_DB
-ENV PGC_DB ${PGC_DB}
-
-### Download PostgreSQL
-RUN Invoke-Expression -Command $('C:\\bigsql\\pgc install --silent {0}' -f $env:PGC_DB) ; \
-    Invoke-Expression -Command   'C:\\bigsql\\pgc clean' ; \
-    Remove-Item -Path 'C:\\bigsql\\conf\\pgc.pid'
+### Download EnterpriseDB and remove cruft
+RUN $URL1 = $('{0}/postgresql-{1}-windows-x64-binaries.zip' -f $env:EDB_REPO,$env:EDB_VER) ; \
+    Invoke-WebRequest -Uri $URL1 -OutFile 'C:\\EnterpriseDB.zip' ; \
+    Expand-Archive 'C:\\EnterpriseDB.zip' -DestinationPath 'C:\\' ; \
+    Remove-Item -Path 'C:\\EnterpriseDB.zip' ; \
+    Remove-Item -Recurse -Force –Path 'C:\\pgsql\\doc' ; \
+    Remove-Item -Recurse -Force –Path 'C:\\pgsql\\include' ; \
+    Remove-Item -Recurse -Force –Path 'C:\\pgsql\\pgAdmin*' ; \
+    Remove-Item -Recurse -Force –Path 'C:\\pgsql\\StackBuilder'
 
 ### Make the sample config easier to munge (and "correct by default")
-RUN $SAMPLE_FILE = $('C:\\bigsql\\{0}\\share\\postgresql\\postgresql.conf.sample' -f $env:PGC_DB) ; \
+RUN $SAMPLE_FILE = 'C:\\pgsql\\share\\postgresql.conf.sample' ; \
     $SAMPLE_CONF = Get-Content $SAMPLE_FILE ; \
     $SAMPLE_CONF = $SAMPLE_CONF -Replace '#listen_addresses = ''localhost''','listen_addresses = ''*''' ; \
     $SAMPLE_CONF | Set-Content $SAMPLE_FILE
 
+# Install correct Visual C++ Redistributable Package
+RUN if (($env:EDB_VER -eq '9.4.21-1') -or ($env:EDB_VER -eq '9.5.16-1') -or ($env:EDB_VER -eq '9.6.12-2') -or ($env:EDB_VER -eq '10.7-2')) { \
+        Write-Host('Visual C++ 2013 Redistributable Package') ; \
+        $URL2 = 'https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe' ; \
+    } else { \
+        Write-Host('Visual C++ 2017 Redistributable Package') ; \
+        $URL2 = 'https://download.visualstudio.microsoft.com/download/pr/11100230/15ccb3f02745c7b206ad10373cbca89b/VC_redist.x64.exe' ; \
+    } ; \
+    Invoke-WebRequest -Uri $URL2 -OutFile 'C:\\vcredist.exe' ; \
+    Start-Process 'C:\\vcredist.exe' -Wait \
+        -ArgumentList @( \
+            '/install', \
+            '/passive', \
+            '/norestart' \
+        )
+
+# Determine new files installed by VC Redist
+# RUN Get-ChildItem -Path 'C:\\Windows\\System32' | Sort-Object -Property LastWriteTime | Select Name,LastWriteTime -First 25
+
+# Copy relevant DLLs to PostgreSQL
+RUN if (Test-Path 'C:\\windows\\system32\\msvcp120.dll') { \
+        Write-Host('Visual C++ 2013 Redistributable Package') ; \
+        Copy-Item 'C:\\windows\\system32\\msvcp120.dll' -Destination 'C:\\pgsql\\bin\\msvcp120.dll' ; \
+        Copy-Item 'C:\\windows\\system32\\msvcr120.dll' -Destination 'C:\\pgsql\\bin\\msvcr120.dll' ; \
+    } else { \
+        Write-Host('Visual C++ 2017 Redistributable Package') ; \
+        Copy-Item 'C:\\windows\\system32\\vcruntime140.dll' -Destination 'C:\\pgsql\\bin\\vcruntime140.dll' ; \
+    }
+
 ####
 #### PostgreSQL on Windows Nano Server
 ####
-FROM microsoft/nanoserver:1803
+FROM mcr.microsoft.com/windows/nanoserver:1809
 
 RUN mkdir "C:\\docker-entrypoint-initdb.d"
 
-#### Copy over the PGCLI
-COPY --from=prepare "C:\\bigsql" "C:\\bigsql"
-
-### Set the PostgreSQL version we will install
-### This is set here to allow us to reuse the abover layers
-ARG PGC_DB
-ENV PGC_DB ${PGC_DB}
-
-### Required for PGCLI
-ENV PYTHONIOENCODING="UTF-8" \
-    PYTHONPATH="C:\\bigsql\\${PGC_DB}\\python\\site-packages" \
-    GDAL_DATA="C:\\bigsql\\${PGC_DB}\\share\\gdal"
-
-#### Copy over PostgeSQL
-COPY --from=download "C:\\bigsql\\${PGC_DB}" "C:\\bigsql\\${PGC_DB}"
+#### Copy over PostgreSQL
+COPY --from=prepare /pgsql /pgsql
 
 #### In order to set system PATH, ContainerAdministrator must be used
 USER ContainerAdministrator
-RUN setx /M PATH "C:\\bigsql\\%PGC_DB%\\bin;%PATH%"
+RUN setx /M PATH "C:\\pgsql\\bin;%PATH%"
 USER ContainerUser
-ENV PGDATA "C:\\bigsql\\data\\${PGC_DB}"
-RUN mkdir "%PGDATA%"
+ENV PGDATA "C:\\pgsql\\data"
 
-COPY docker-entrypoint.cmd "C:\\"
+COPY docker-entrypoint.cmd /
 ENTRYPOINT ["C:\\docker-entrypoint.cmd"]
 
 EXPOSE 5432

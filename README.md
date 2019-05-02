@@ -1,10 +1,10 @@
 ## Supported tags and `Dockerfile` links
 
--   [`11` (11/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/11/Dockerfile)
--   [`10.5`, `10`, `latest` (10/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/10/Dockerfile)
--   [`9.6`, `9` (9.6/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/9.6/Dockerfile)
--   [`9.5` (9.5/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/9.5/Dockerfile)
--   [`9.4` (9.4/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/9.4/Dockerfile)
+-   [`11.2`, `11`, `latest` (11/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`10.5`, `10` (10/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`9.6.12`, `9.6` (9.6/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`9.5.16`, `9.5` (9.5/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`9.4.21`, `9.4` (9.4/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
 
 ## Quick reference
 
@@ -38,11 +38,9 @@ For further details about usage see the [official PostgreSQL container image](ht
 
 ## About this container image
 
-A Windows container to run PostgreSQL based on the [BigSQL](http://www.openscg.com/bigsql/about/) distribution, which is one of the two official distributions found on the [PostgeSQL for Windows](https://www.postgresql.org/download/windows/) download page.
+A Windows container to run PostgreSQL based on the [EnterpriseDB](https://www.enterprisedb.com/) distribution, which is found on the [PostgeSQL for Windows](https://www.postgresql.org/download/windows/) download page.
 
 This repository builds a Windows based Docker image that is functionaly similar to the official [Linux based Docker image](https://hub.docker.com/_/postgres/).
-
-The BigSQL distribution was chosen over the EnterpriseDB distribution due to its ease of automating the installation with a Dockerfile.
 
 ### Testing
 
@@ -52,16 +50,14 @@ So far, no differences in behaviour have been observed compared to the official 
 
 ### Motivation
 
-The Linux based Docker iamge cannot run on Windows as a LCOW container. This is due to differences in functionality between the NTFS and EXT4 file systems. Specifically, Linux commands such as `chown` do not work but the PostgreSQL iamges relies on them for security.
-
-(An attempt was made to remove `chown` from the Linux based image, but PostgreSQL *strongly* resists being installed and run as the `root` user.)
+The Linux based Docker iamge cannot run on Windows as a LCOW container. This is due to differences in functionality between the NTFS and EXT4 file systems. Specifically, Linux commands such as `chown` do not work but the PostgreSQL images relies on them for security.
 
 ### Entrypoint
 
-The entrypoint is written as a batch script because the database is run on `windows/nanoserver`, which doesn't have PowerShell. Writing the entrypoint script was challenging due to batch script limitations, but this gives us a base image of less than `650MB` versus `5.25GB` when `microsoft/windowsservercore` is used.
+The entrypoint is written as a batch script because the database is run on `windows/nanoserver`, which doesn't have PowerShell. Writing the entrypoint script was challenging due to batch script limitations, but this gives us a base image of less than `450MB` versus nearly `5GB` when `windows/servercore` is used.
 
 The `Dockerfile` and the `docker-entrypoint.cmd` were strongly inspired by the equivalent files for the official Linux based Docker images. There are some minor deviations, but this is mostly to work around differences in Batch script behaviour.
 
 ### Licence
 
-The files here are under the MIT licence, the same as the regular [docker-library/postgres](https://github.com/docker-library/postgres) docker files. Just like `docker-library/postges`, the licence here covers *only* the files in this repository. It doesn't cover the PostgreSQL distribution, which may have its own licence.
+The files here are under the MIT licence, the same as the regular [docker-library/postgres](https://github.com/docker-library/postgres) docker files. Just like `docker-library/postgres`, the licence here covers *only* the files in this repository. It doesn't cover the PostgreSQL distribution, which has its own licence.
