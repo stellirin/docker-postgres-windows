@@ -1,10 +1,10 @@
 ## Supported tags and `Dockerfile` links
 
--   [`11.2`, `11`, `latest` (11/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
--   [`10.5`, `10` (10/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
--   [`9.6.12`, `9.6` (9.6/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
--   [`9.5.16`, `9.5` (9.5/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
--   [`9.4.21`, `9.4` (9.4/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`11.3`, `11`, `latest` (11/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`10.8`, `10` (10/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`9.6.13`, `9.6` (9.6/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`9.5.17`, `9.5` (9.5/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`9.4.22`, `9.4` (9.4/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
 
 ## Quick reference
 
@@ -15,7 +15,7 @@
     [https://github.com/stellirin/docker-postgres-windows/issues](https://github.com/stellirin/docker-postgres-windows/issues)
 
 -   **Maintained by**:
-    [Stellar Iridescence](https://github.com/stellirin)
+    [Stellirin](https://github.com/stellirin)
 
 -   **Supported architectures**: ([more info](https://github.com/docker-library/official-images#architectures-other-than-amd64))
     [`windows-amd64`](https://hub.docker.com/u/winamd64/)
