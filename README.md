@@ -1,10 +1,10 @@
 ## Supported tags and `Dockerfile` links
 
--   [`11.3`, `11`, `latest` (11/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
--   [`10.8`, `10` (10/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
--   [`9.6.13`, `9.6` (9.6/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
--   [`9.5.17`, `9.5` (9.5/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
--   [`9.4.22`, `9.4` (9.4/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`11.4`, `11`, `latest` (11/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`10.9`, `10` (10/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`9.6.14`, `9.6` (9.6/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`9.5.18`, `9.5` (9.5/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`9.4.23`, `9.4` (9.4/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
 
 ## Quick reference
 
@@ -50,7 +50,7 @@ So far, no differences in behaviour have been observed compared to the official 
 
 ### Motivation
 
-The Linux based Docker iamge cannot run on Windows as a LCOW container. This is due to differences in functionality between the NTFS and EXT4 file systems. Specifically, Linux commands such as `chown` do not work but the PostgreSQL images relies on them for security.
+The Linux based Docker iamge cannot run on Windows as a LCOW container. This is due to differences in functionality between the NTFS and EXT4 file systems. Specifically, Linux commands such as `chown` do not work but the PostgreSQL images rely on them for security.
 
 ### Entrypoint
 
