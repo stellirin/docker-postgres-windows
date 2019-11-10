@@ -1,7 +1,7 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
-:: Build versions of PostgreSQL supported by BigSQL
+:: Build versions of PostgreSQL supported by EnterpriseDB
 
 set value=%~1
 if [%value%] == [] (
@@ -10,6 +10,7 @@ if [%value%] == [] (
     set pg96=true
     set pg10=true
     set pg11=true
+    set pg12=true
 )
 if NOT [%value%] == [] (
     set %value%=true
@@ -19,11 +20,11 @@ if NOT [%value%] == [] (
 if [%pg94%] == [true] (
     docker build ^
         --pull ^
-        --build-arg EDB_VER=9.4.23-2 ^
-        --tag stellirin/postgres-windows:9.4.23 ^
+        --build-arg EDB_VER=9.4.24-2 ^
+        --tag stellirin/postgres-windows:9.4.24 ^
         --tag stellirin/postgres-windows:9.4 ^
         .
-    docker push stellirin/postgres-windows:9.4.23
+    docker push stellirin/postgres-windows:9.4.24
     docker push stellirin/postgres-windows:9.4
 )
 
@@ -31,11 +32,11 @@ if [%pg94%] == [true] (
 if [%pg95%] == [true] (
     docker build ^
         --pull ^
-        --build-arg EDB_VER=9.5.18-2 ^
-        --tag stellirin/postgres-windows:9.5.18 ^
+        --build-arg EDB_VER=9.5.19-2 ^
+        --tag stellirin/postgres-windows:9.5.19 ^
         --tag stellirin/postgres-windows:9.5 ^
         .
-    docker push stellirin/postgres-windows:9.5.18
+    docker push stellirin/postgres-windows:9.5.19
     docker push stellirin/postgres-windows:9.5
 )
 
@@ -43,11 +44,11 @@ if [%pg95%] == [true] (
 if [%pg96%] == [true] (
     docker build ^
         --pull ^
-        --build-arg EDB_VER=9.6.14-2 ^
-        --tag stellirin/postgres-windows:9.6.14 ^
+        --build-arg EDB_VER=9.6.15-2 ^
+        --tag stellirin/postgres-windows:9.6.15 ^
         --tag stellirin/postgres-windows:9.6 ^
         .
-    docker push stellirin/postgres-windows:9.6.14
+    docker push stellirin/postgres-windows:9.6.15
     docker push stellirin/postgres-windows:9.6
 )
 
@@ -55,11 +56,11 @@ if [%pg96%] == [true] (
 if [%pg10%] == [true] (
     docker build ^
         --pull ^
-        --build-arg EDB_VER=10.9-2 ^
-        --tag stellirin/postgres-windows:10.9 ^
+        --build-arg EDB_VER=10.10-2 ^
+        --tag stellirin/postgres-windows:10.10 ^
         --tag stellirin/postgres-windows:10 ^
         .
-    docker push stellirin/postgres-windows:10.9
+    docker push stellirin/postgres-windows:10.10
     docker push stellirin/postgres-windows:10
 )
 
@@ -67,12 +68,24 @@ if [%pg10%] == [true] (
 if [%pg11%] == [true] (
     docker build ^
         --pull ^
-        --build-arg EDB_VER=11.4-2 ^
-        --tag stellirin/postgres-windows:11.4 ^
+        --build-arg EDB_VER=11.5-2 ^
+        --tag stellirin/postgres-windows:11.5 ^
         --tag stellirin/postgres-windows:11 ^
+        .
+    docker push stellirin/postgres-windows:11.5
+    docker push stellirin/postgres-windows:11
+)
+
+:: PostgeSQL 12
+if [%pg12%] == [true] (
+    docker build ^
+        --pull ^
+        --build-arg EDB_VER=12.0-1 ^
+        --tag stellirin/postgres-windows:12.0 ^
+        --tag stellirin/postgres-windows:12 ^
         --tag stellirin/postgres-windows:latest ^
         .
-    docker push stellirin/postgres-windows:11.4
-    docker push stellirin/postgres-windows:11
+    docker push stellirin/postgres-windows:12.0
+    docker push stellirin/postgres-windows:12
     docker push stellirin/postgres-windows:latest
 )

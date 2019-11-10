@@ -3,7 +3,7 @@
 ####
 FROM mcr.microsoft.com/windows/servercore:1809 as prepare
 
-# Set the variables for EnterpriseDB
+### Set the variables for EnterpriseDB
 ARG EDB_VER
 ENV EDB_VER $EDB_VER
 ENV EDB_REPO https://get.enterprisedb.com/postgresql
@@ -27,8 +27,8 @@ RUN $SAMPLE_FILE = 'C:\\pgsql\\share\\postgresql.conf.sample' ; \
     $SAMPLE_CONF = $SAMPLE_CONF -Replace '#listen_addresses = ''localhost''','listen_addresses = ''*''' ; \
     $SAMPLE_CONF | Set-Content $SAMPLE_FILE
 
-# Install correct Visual C++ Redistributable Package
-RUN if (($env:EDB_VER -eq '9.4.22-1') -or ($env:EDB_VER -eq '9.5.17-1') -or ($env:EDB_VER -eq '9.6.13-1') -or ($env:EDB_VER -eq '10.8-1')) { \
+### Install correct Visual C++ Redistributable Package
+RUN if (($env:EDB_VER -eq '9.4.24-2') -or ($env:EDB_VER -eq '9.5.19-2') -or ($env:EDB_VER -eq '9.6.15-2') -or ($env:EDB_VER -eq '10.10-2')) { \
         Write-Host('Visual C++ 2013 Redistributable Package') ; \
         $URL2 = 'https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe' ; \
     } else { \
