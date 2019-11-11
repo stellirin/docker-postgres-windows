@@ -1,7 +1,8 @@
 ####
 #### Download and prepare PostgreSQL for Windows
 ####
-FROM mcr.microsoft.com/windows/servercore:1809 as prepare
+ARG TAG_VER
+FROM mcr.microsoft.com/windows/servercore:${TAG_VER} as prepare
 
 ### Set the variables for EnterpriseDB
 ARG EDB_VER
@@ -59,7 +60,8 @@ RUN if (Test-Path 'C:\\windows\\system32\\msvcp120.dll') { \
 ####
 #### PostgreSQL on Windows Nano Server
 ####
-FROM mcr.microsoft.com/windows/nanoserver:1809
+ARG TAG_VER
+FROM mcr.microsoft.com/windows/nanoserver:${TAG_VER}
 
 RUN mkdir "C:\\docker-entrypoint-initdb.d"
 

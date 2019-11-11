@@ -1,7 +1,7 @@
 ## Supported tags and `Dockerfile` links
 
 -   [`12.0`, `12`, `latest` (12/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
--   [`11.5`, `11`, `latest` (11/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
+-   [`11.5`, `11` (11/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
 -   [`10.10`, `10` (10/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
 -   [`9.6.15`, `9.6` (9.6/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
 -   [`9.5.19`, `9.5` (9.5/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
