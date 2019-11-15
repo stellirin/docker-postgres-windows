@@ -65,8 +65,8 @@ if NOT exist "%PGDATA%\PG_VERSION" (
     call :file_env POSTGRES_INITDB_ARGS
 
     if NOT [!POSTGRES_PASSWORD!] == [] (
-        echo !POSTGRES_PASSWORD!> "C:\.pgpass"
-        set POSTGRES_INITDB_ARGS=!POSTGRES_INITDB_ARGS! --pwfile="C:\.pgpass"
+        echo !POSTGRES_PASSWORD!> "%TEMP%\pgpass.tmp"
+        set POSTGRES_INITDB_ARGS=!POSTGRES_INITDB_ARGS! --pwfile="%TEMP%\pgpass.tmp"
     )
 
     if NOT [%POSTGRES_INITDB_WALDIR%] == [] (
@@ -74,8 +74,8 @@ if NOT exist "%PGDATA%\PG_VERSION" (
     )
 
     call initdb -U "!POSTGRES_USER!" -E UTF8 --no-locale -D "%PGDATA%" !POSTGRES_INITDB_ARGS!
-    if exist "C:\.pgpass" (
-        call del "C:\.pgpass"
+    if exist "%TEMP%\pgpass.tmp" (
+        call del "%TEMP%\pgpass.tmp"
     )
 
     if NOT [!POSTGRES_PASSWORD!] == [] (

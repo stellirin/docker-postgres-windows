@@ -51,13 +51,13 @@ So far, no differences in behaviour have been observed compared to the official 
 
 ### Motivation
 
-The Linux based Docker iamge cannot run on Windows as a LCOW container. This is due to differences in functionality between the NTFS and EXT4 file systems. Specifically, Linux commands such as `chown` do not work but the PostgreSQL images rely on them for security.
+The Linux based Docker image cannot run on Windows as a LCOW container. This is due to differences in functionality between the NTFS and EXT4 file systems. Specifically, Linux commands such as `chown` do not work but the PostgreSQL images rely on them for security.
 
 ### Entrypoint
 
 The entrypoint is written as a batch script because the database is run on `windows/nanoserver`, which doesn't have PowerShell. Writing the entrypoint script was challenging due to batch script limitations, but this gives us a base image of less than `450MB` versus nearly `5GB` when `windows/servercore` is used.
 
-The `Dockerfile` and the `docker-entrypoint.cmd` were strongly inspired by the equivalent files for the official Linux based Docker images. There are some minor deviations, but this is mostly to work around differences in Batch script behaviour.
+The `Dockerfile` and the `docker-entrypoint.cmd` were strongly inspired by the equivalent files for the official Linux based Docker images. There are some minor deviations, but this is mostly to work around differences in batch script behaviour.
 
 ### Licence
 
