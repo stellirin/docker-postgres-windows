@@ -1,8 +1,13 @@
 ####
+#### Windows tag arguments
+####
+ARG CORE_VER
+ARG NANO_VER
+
+####
 #### Download and prepare PostgreSQL for Windows
 ####
-ARG TAG_VER
-FROM mcr.microsoft.com/windows/servercore:${TAG_VER} as prepare
+FROM mcr.microsoft.com/windows/servercore:${CORE_VER} as prepare
 
 ### Set the variables for EnterpriseDB
 ARG EDB_VER
@@ -14,6 +19,7 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 
 ### Download EnterpriseDB and remove cruft
 RUN $URL1 = $('{0}/postgresql-{1}-windows-x64-binaries.zip' -f $env:EDB_REPO,$env:EDB_VER) ; \
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 ; \
     Invoke-WebRequest -Uri $URL1 -OutFile 'C:\\EnterpriseDB.zip' ; \
     Expand-Archive 'C:\\EnterpriseDB.zip' -DestinationPath 'C:\\' ; \
     Remove-Item -Path 'C:\\EnterpriseDB.zip' ; \
@@ -29,7 +35,7 @@ RUN $SAMPLE_FILE = 'C:\\pgsql\\share\\postgresql.conf.sample' ; \
     $SAMPLE_CONF | Set-Content $SAMPLE_FILE
 
 ### Install correct Visual C++ Redistributable Package
-RUN if (($env:EDB_VER -eq '9.4.24-2') -or ($env:EDB_VER -eq '9.5.19-2') -or ($env:EDB_VER -eq '9.6.15-2') -or ($env:EDB_VER -eq '10.10-2')) { \
+RUN if (($env:EDB_VER -like '9.*') -or ($env:EDB_VER -like '10.*')) { \
         Write-Host('Visual C++ 2013 Redistributable Package') ; \
         $URL2 = 'https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe' ; \
     } else { \
@@ -60,8 +66,7 @@ RUN if (Test-Path 'C:\\windows\\system32\\msvcp120.dll') { \
 ####
 #### PostgreSQL on Windows Nano Server
 ####
-ARG TAG_VER
-FROM mcr.microsoft.com/windows/nanoserver:${TAG_VER}
+FROM mcr.microsoft.com/windows/nanoserver:${NANO_VER}
 
 RUN mkdir "C:\\docker-entrypoint-initdb.d"
 

@@ -7,6 +7,17 @@
 -   [`9.5.19`, `9.5` (9.5/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
 -   [`9.4.24`, `9.4` (9.4/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
 
+The above tags are manifest tags that consist of a set builds based on all available `nanoserver` releases, specifically:
+
+- `nanoserver:1909`
+- `nanoserver:1903`
+- `nanoserver:1809`
+- `nanoserver:1803` (EOL 2019-11-12)
+- `nanoserver:1709` (EOL 2019-04-09)
+- `nanoserver:sac2016` (EOL 2018-10-09)
+
+Your Docker client should pull down the correct image.
+
 ## Quick reference
 
 -   **Where to get help**:
