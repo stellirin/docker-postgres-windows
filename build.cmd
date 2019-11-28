@@ -23,10 +23,8 @@ goto :start
 
 :: CALL :image_build TAGNAME COREVER NANOVER EDBVER
 :image_build
-    set tagName=%~1
-    set coreVer=%~2
-    set nanoVer=%~3
-    set edbVer=%~4
+    set winVer=%~1
+    set edbVer=%~2
     set pgVer=%edbVer:~0,-2%
 
     :: Modern version numbers: 10, 11, 12 etc.
@@ -41,37 +39,27 @@ goto :start
     )
 
     docker build ^
-        --build-arg CORE_VER=%coreVer% ^
-        --build-arg NANO_VER=%nanoVer% ^
+        --build-arg WIN_VER=%winVer% ^
         --build-arg EDB_VER=%edbVer% ^
-        --tag %repoName%:%pgVer%-%tagName% ^
-        --tag %repoName%:%tagVer%-%tagName% ^
+        --tag %repoName%:%pgVer%-%winVer% ^
+        --tag %repoName%:%tagVer%-%winVer% ^
         .
-    docker push %repoName%:%pgVer%-%tagName%
-    docker push %repoName%:%tagVer%-%tagName%
+    docker push %repoName%:%pgVer%-%winVer%
+    docker push %repoName%:%tagVer%-%winVer%
 EXIT /B 0
 
 :: CALL :postgres_build EDBVER
 :postgres_build
     set edbVer=%~1
 
-    if [%win1607%] == [true] (
-        call :image_build 1607 ltsc2016 sac2016 %edbVer%
-    )
-    if [%win1709%] == [true] (
-        call :image_build 1709 1709 1709 %edbVer%
-    )
-    if [%win1803%] == [true] (
-        call :image_build 1803 1803 1803 %edbVer%
-    )
     if [%win1809%] == [true] (
-        call :image_build 1809 1809 1809 %edbVer%
+        call :image_build 1809 %edbVer%
     )
     if [%win1903%] == [true] (
-        call :image_build 1903 1903 1903 %edbVer%
+        call :image_build 1903 %edbVer%
     )
     if [%win1909%] == [true] (
-        call :image_build 1909 1909 1909 %edbVer%
+        call :image_build 1909 %edbVer%
     )
 EXIT /B 0
 
@@ -80,8 +68,6 @@ EXIT /B 0
     set manVer=%~1
     docker manifest create --amend ^
         %repoName%:%manVer% ^
-        %repoName%:%manVer%-1709 ^
-        %repoName%:%manVer%-1803 ^
         %repoName%:%manVer%-1809 ^
         %repoName%:%manVer%-1903 ^
         %repoName%:%manVer%-1909
@@ -114,9 +100,6 @@ if NOT [%pgValue%] == [] (
 :: Build versions based on various Windows 10 base images
 set winValue=%~2
 if [%winValue%] == [] (
-    set win1607=true
-    set win1709=true
-    set win1803=true
     set win1809=true
     set win1903=true
     set win1909=true
@@ -125,16 +108,10 @@ if NOT [%winValue%] == [] (
     set %winValue%=true
 )
 
-docker pull mcr.microsoft.com/windows/servercore:ltsc2016
-docker pull mcr.microsoft.com/windows/servercore:1709
-docker pull mcr.microsoft.com/windows/servercore:1803
 docker pull mcr.microsoft.com/windows/servercore:1809
 docker pull mcr.microsoft.com/windows/servercore:1903
 docker pull mcr.microsoft.com/windows/servercore:1909
 
-docker pull mcr.microsoft.com/windows/nanoserver:sac2016
-docker pull mcr.microsoft.com/windows/nanoserver:1709
-docker pull mcr.microsoft.com/windows/nanoserver:1803
 docker pull mcr.microsoft.com/windows/nanoserver:1809
 docker pull mcr.microsoft.com/windows/nanoserver:1903
 docker pull mcr.microsoft.com/windows/nanoserver:1909
