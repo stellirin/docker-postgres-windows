@@ -1,3 +1,9 @@
+# This repository is archived!
+
+I no longer have a need for PostgreSQL as a Windows container so I will not continue to maintain this repository.
+
+If anyone still has a use case for this kind of container image I recommend to reimplement the refactored upstream entrypoint shell script in PowerShell. Batch script probably cannot be used without a lot of ugly hacks.
+
 ## Supported tags and `Dockerfile` links
 
 -   [`12.0`, `12`, `latest` (12/Dockerfile)](https://github.com/stellirin/docker-postgres-windows/blob/master/Dockerfile)
